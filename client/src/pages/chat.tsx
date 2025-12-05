@@ -17,40 +17,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sendChat, Message } from "../lib/agentClient";
 // Removed duplicate Message import; using Message from agentClient.ts
 
-function formatMessageContent(content: string) {
-  const lines = content.split('\n');
-  
-  return lines.map((line, lineIndex) => {
-    let processedLine = line;
-    
-    const headingMatch = processedLine.match(/^#{1,3}\s*(\d+\.?\s*)(.+)$/);
-    if (headingMatch) {
-      const [, number, title] = headingMatch;
-      const cleanTitle = title.replace(/\*\*/g, '');
-      return (
-        <span key={lineIndex}>
-          <strong className="font-semibold">{number}{cleanTitle}</strong>
-          {lineIndex < lines.length - 1 && '\n'}
-        </span>
-      );
-    }
-    
-    const parts = processedLine.split(/(\*\*[^*]+\*\*)/g);
-    const formattedParts = parts.map((part, partIndex) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        const boldText = part.slice(2, -2);
-        return <strong key={partIndex} className="font-semibold">{boldText}</strong>;
-      }
-      return <span key={partIndex}>{part}</span>;
-    });
-    
-    return (
-      <span key={lineIndex}>
-        {formattedParts}
-        {lineIndex < lines.length - 1 && '\n'}
-      </span>
-    );
-  });
+function formatMessageContent(content: string | undefined | null) {
+  if (!content) return [""];
+  const lines = content.split("\n");
+  return lines.map((line, lineIndex) => (
+    <span key={lineIndex}>{line}</span>
+  ));
 }
 
 const suggestedPrompts = [

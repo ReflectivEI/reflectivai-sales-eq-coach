@@ -18,10 +18,13 @@ import { sendChat, Message } from "../lib/agentClient";
 // Removed duplicate Message import; using Message from agentClient.ts
 
 function formatMessageContent(content: string | undefined | null) {
-  if (!content) return [""];
-  const lines = content.split("\n");
-  return lines.map((line, lineIndex) => (
-    <span key={lineIndex}>{line}</span>
+  if (!content || typeof content !== "string") return [""];
+
+  const text = String(content ?? "");
+  const lines = text.split(/\r?\n/);
+
+  return lines.map((line, i) => (
+    <span key={i}>{line}</span>
   ));
 }
 

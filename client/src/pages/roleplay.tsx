@@ -6,7 +6,133 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import {
+  Select,import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
+import {
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Users,
+  Play,
+  Send,
+  Brain,
+  Target,
+  AlertCircle,
+  CheckCircle,
+  ChevronRight,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+// ✅ UPDATED IMPORTS
+import type { Message } from "@/types/Message";
+import { sendRoleplay } from "../lib/agentClient";
+
+import { scenarios } from "@/lib/data";
+import type { Scenario } from "@shared/schema";
+
+const difficultyColors = {
+  beginner: "bg-chart-4 text-white",
+  intermediate: "bg-chart-2 text-white",
+  advanced: "bg-destructive text-destructive-foreground",
+};
+
+export default function RolePlayPage() {
+  const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
+  const [isActive, setIsActive] = useState(false);
+  const [input, setInput] = useState("");
+  const queryClient = useQueryClient();
+
+  const { data: roleplayData } = useQuery<{
+    messages: Message[];
+    analysis?: {
+      overallScore: number;
+      eqMetrics: {
+        empathy: number;
+        activeListening: number;
+        rapport: number;
+        discAdaptation: number;
+      };
+      strengths: string[];
+      improvements: string[];
+    };
+  }>({
+    queryKey: ["/api/roleplay/session"],
+    enabled: isActive,
+  });
+
+  const [history, setHistory] = useState<Message[]>([]);
+  const startScenarioMutation = useMutation({
+    mutationFn: async (scenarioId: string) => {
+      const response = await sendRoleplay({
+        action: "start",
+        scenarioId,
+      });
+      setIsActive(true);
+      setHistory(response.messages || []);
+      return response;
+    },
+  });
+
+  const sendResponseMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const userMessage: Message = {
+        id: `${Date.now()}`,
+        role: "user",
+        content,
+        timestamp: Date.now(),
+      };
+      const newHistory = [...history, userMessage];
+      setHistory(newHistory);
+      const response = await sendRoleplay({
+        action: "respond",
+        scenarioId: selectedScenario?.id || "",
+        history: newHistory,
+        userInput: content,
+      });
+      setHistory(response.messages || newHistory);
+      return response;
+    },
+  });
+
+  const handleStart = () => {
+    if (selectedScenario) {
+      startScenarioMutation.mutate(selectedScenario.id);
+    }
+  };
+
+  const handleSend = () => {
+    if (!input.trim() || sendResponseMutation.isPending) return;
+    sendResponseMutation.mutate(input);
+    setInput("");
+  };
+
+  const handleReset = () => {
+    setIsActive(false);
+    setSelectedScenario(null);
+    queryClient.invalidateQueries({ queryKey: ["/api/roleplay/session"] });
+  };
+
+  const messages = roleplayData?.messages || [];
+  const analysis = roleplayData?.analysis;
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* the rest of your file remains unchanged */}
+    </div>
+  );
+}
+
   SelectContent,
   SelectItem,
   SelectTrigger,

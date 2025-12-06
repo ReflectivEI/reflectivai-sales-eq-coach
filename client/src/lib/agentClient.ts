@@ -12,11 +12,12 @@ const CHAT_ENDPOINT = WORKER_URL.replace(/\/+$/, "") + "/chat";
 //-------------------------------------------------------------
 // TYPES
 //-------------------------------------------------------------
-import type { Message } from "@/types/Message";
+import type { Message } from "../types/Message";
 
 //-------------------------------------------------------------
 // Helpers
 //-------------------------------------------------------------
+
 function normalizeMessage(raw: any): Message {
   return {
     id: raw.id ?? crypto.randomUUID(),
@@ -26,10 +27,10 @@ function normalizeMessage(raw: any): Message {
         ? raw.content
         : JSON.stringify(raw.content ?? ""),
     timestamp: raw.timestamp ?? Date.now(),
-    feedback: raw.feedback ?? undefined,
   };
 }
 
+// backend may return: { messages: [...] } OR { message: {...} } OR raw msg
 function extractMessageResponse(json: any): Message {
   if (Array.isArray(json?.messages) && json.messages.length > 0) {
     return normalizeMessage(json.messages[json.messages.length - 1]);
@@ -66,11 +67,12 @@ export async function sendChat(messages: Message[]): Promise<Message> {
 
   const json = await res.json();
   console.log("🔥 RAW WORKER RESPONSE:", json);
+
   return extractMessageResponse(json);
 }
 
 //-------------------------------------------------------------
-// ROLEPLAY
+// ROLE-PLAY
 //-------------------------------------------------------------
 export interface RoleplayPayload {
   action: "start" | "respond" | "analyze";
@@ -91,7 +93,7 @@ export async function sendRoleplay({
     scenarioId,
   };
 
-  if (history?.length) payload.history = history;
+  if (history.length) payload.history = history;
   if (userInput) payload.userInput = userInput;
 
   const res = await fetch(CHAT_ENDPOINT, {
@@ -113,7 +115,7 @@ export async function sendRoleplay({
 
   const json = await res.json();
 
-  if (json?.messages) {
+  if (Array.isArray(json?.messages)) {
     json.messages = json.messages.map((m: any) => normalizeMessage(m));
   }
 

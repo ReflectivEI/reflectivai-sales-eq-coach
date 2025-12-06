@@ -17,7 +17,6 @@ import type { Message } from "@/types/Message";
 //-------------------------------------------------------------
 // Helpers
 //-------------------------------------------------------------
-
 function normalizeMessage(raw: any): Message {
   return {
     id: raw.id ?? crypto.randomUUID(),
@@ -27,10 +26,10 @@ function normalizeMessage(raw: any): Message {
         ? raw.content
         : JSON.stringify(raw.content ?? ""),
     timestamp: raw.timestamp ?? Date.now(),
+    feedback: raw.feedback ?? undefined,
   };
 }
 
-// backend may return: { messages: [...] } OR { message: {...} } OR raw msg
 function extractMessageResponse(json: any): Message {
   if (Array.isArray(json?.messages) && json.messages.length > 0) {
     return normalizeMessage(json.messages[json.messages.length - 1]);

@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 import reflectivAILogo from "@assets/E2ABF40D-E679-443C-A1B7-6681EF25E7E7_1764541714586.png";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { sendChat, Message } from "../lib/agentClient";
+
+// ✅ UPDATED IMPORTS
+import type { Message } from "@/types/Message";
+import { sendChat } from "../lib/agentClient";
 
 const suggestedPrompts = [
   "How do I handle a price objection from a hospital CFO?",

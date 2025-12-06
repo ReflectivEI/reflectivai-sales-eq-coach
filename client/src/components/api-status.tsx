@@ -1,63 +1,77 @@
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle, Sparkles } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 
-interface ApiStatus {
-  openaiConfigured: boolean;
-  message: string;
+const STATUS_ENDPOINT = "/api/status"; 
+// Worker returns { status: "ok" | "error", latency: number }
+
+async function fetchStatus(): Promise<{ status: string; latency: number }> {
+  const start = performance.now();
+  try {
+    const res = await fetch(STATUS_ENDPOINT, { method: "GET" });
+    if (!res.ok) throw new Error("Status check failed");
+    const data = await res.json();
+    const latency = Math.round(performance.now() - start);
+    return { ...data, latency };
+  } catch (_) {
+    return { status: "error", latency: 0 };
+  }
 }
 
-export function ApiStatusBanner() {
-  const { data: status } = useQuery<ApiStatus>({
-    queryKey: ["/api/status"],
-    refetchOnWindowFocus: false,
-    staleTime: Infinity,
+// -------------------------------------------------------------
+// BADGE (Header)
+// -------------------------------------------------------------
+export function ApiStatusBadge() {
+  const { data, isFetching } = useQuery({
+    queryKey: ["api-status"],
+    queryFn: fetchStatus,
+    refetchInterval: 5000,
   });
 
-  if (!status || status.openaiConfigured) {
-    return null;
+  const status = data?.status;
+
+  if (isFetching) {
+    return (
+      <Badge variant="outline" className="flex items-center gap-2">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Checking…
+      </Badge>
+    );
+  }
+
+  if (status === "ok") {
+    return (
+      <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+        <CheckCircle className="h-3 w-3 text-chart-4" />
+        Online ({data?.latency}ms)
+      </Badge>
+    );
   }
 
   return (
-    <div className="bg-muted border-b px-4 py-2">
-      <div className="flex items-center gap-2 text-sm">
-        <AlertCircle className="h-4 w-4 text-chart-2" />
-        <span className="text-muted-foreground">
-          <span className="font-medium">Demo Mode:</span> AI features are showing sample responses. 
-          Add your OpenAI API key for full AI-powered coaching.
-        </span>
-      </div>
-    </div>
+    <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+      <AlertCircle className="h-3 w-3" />
+      Offline
+    </Badge>
   );
 }
 
-export function ApiStatusBadge() {
-  const { data: status } = useQuery<ApiStatus>({
-    queryKey: ["/api/status"],
-    refetchOnWindowFocus: false,
-    staleTime: Infinity,
+// -------------------------------------------------------------
+// BANNER (Shown below header if error)
+// -------------------------------------------------------------
+export function ApiStatusBanner() {
+  const { data } = useQuery({
+    queryKey: ["api-status"],
+    queryFn: fetchStatus,
+    refetchInterval: 5000,
   });
 
-  if (!status) {
-    return null;
-  }
+  if (!data || data.status === "ok") return null;
 
   return (
-    <Badge 
-      variant={status.openaiConfigured ? "default" : "secondary"}
-      className="gap-1"
-    >
-      {status.openaiConfigured ? (
-        <>
-          <Sparkles className="h-3 w-3" />
-          AI Enabled
-        </>
-      ) : (
-        <>
-          <AlertCircle className="h-3 w-3" />
-          Demo Mode
-        </>
-      )}
-    </Badge>
+    <div className="w-full bg-destructive/15 border-b border-destructive p-3 text-sm flex items-center gap-2 text-destructive">
+      <AlertCircle className="h-4 w-4" />
+      Cloudflare Worker is offline — the AI features may not work.
+    </div>
   );
 }

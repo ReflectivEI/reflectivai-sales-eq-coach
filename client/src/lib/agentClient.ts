@@ -15,33 +15,31 @@ const CHAT_ENDPOINT = WORKER_URL.replace(/\/+$/, "") + "/chat";
 import type { Message } from "@/types/Message";
 
 //-------------------------------------------------------------
-// HELPERS
+// Helpers
 //-------------------------------------------------------------
+
 function normalizeMessage(raw: any): Message {
   return {
-    id: raw?.id ?? crypto.randomUUID(),
-    role: raw?.role ?? "assistant",
+    id: raw.id ?? crypto.randomUUID(),
+    role: raw.role ?? "assistant",
     content:
-      typeof raw?.content === "string"
+      typeof raw.content === "string"
         ? raw.content
-        : JSON.stringify(raw?.content ?? ""),
-    timestamp: raw?.timestamp ?? Date.now(),
+        : JSON.stringify(raw.content ?? ""),
+    timestamp: raw.timestamp ?? Date.now(),
   };
 }
 
+// backend may return: { messages: [...] } OR { message: {...} } OR raw msg
 function extractMessageResponse(json: any): Message {
-  // e.g. { messages: [...] }
-  if (Array.isArray(json?.messages)) {
-    const last = json.messages[json.messages.length - 1];
-    return normalizeMessage(last);
+  if (Array.isArray(json?.messages) && json.messages.length > 0) {
+    return normalizeMessage(json.messages[json.messages.length - 1]);
   }
 
-  // e.g. { message: {...} }
   if (json?.message) {
     return normalizeMessage(json.message);
   }
 
-  // raw single message
   return normalizeMessage(json);
 }
 
@@ -116,7 +114,7 @@ export async function sendRoleplay({
 
   const json = await res.json();
 
-  if (Array.isArray(json?.messages)) {
+  if (json?.messages) {
     json.messages = json.messages.map((m: any) => normalizeMessage(m));
   }
 

@@ -1,15 +1,20 @@
 //-------------------------------------------------------------
-// Shared Message Type for ReflectivAI Chat & Roleplay Systems
+// Canonical Message Type for ReflectivAI
+// Used across Chat, Roleplay, agentClient, and backend
 //-------------------------------------------------------------
 
 export interface Message {
-    id: string | number;
-    role: "user" | "assistant";
-    content: string;
-    timestamp: number;
-    feedback?: {
-        eqScore?: number;
-        suggestions?: string[];
-        frameworks?: string[];
-    };
+  id: string;
+  role: "user" | "assistant" | "system"; // must include "system"
+  content: string;
+  timestamp: number;
+
+  // Optional — used only when EQ scoring is returned
+  feedback?: {
+    eqScore?: number;
+    suggestions?: string[];
+    frameworks?: string[];
+  };
 }
+
+export default Message;

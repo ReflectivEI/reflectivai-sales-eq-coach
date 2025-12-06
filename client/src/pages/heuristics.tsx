@@ -1,197 +1,142 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Target,
-  Copy,
-  Check,
-  MessageSquare,
-  Shield,
-  Sparkles,
-  Search,
-  Handshake,
-  Brain,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChevronRight, Lightbulb, Brain, MessageSquare, Target } from "lucide-react";
 import { heuristicTemplates } from "@/lib/data";
 import type { HeuristicTemplate } from "@shared/schema";
-
-const categoryIcons: Record<string, any> = {
-  objection: Shield,
-  "value-proposition": Sparkles,
-  closing: Target,
-  discovery: Search,
-  rapport: Handshake,
-};
 
 const categoryLabels: Record<string, string> = {
   objection: "Objection Handling",
   "value-proposition": "Value Proposition",
-  closing: "Closing Techniques",
-  discovery: "Discovery Questions",
+  discovery: "Discovery",
   rapport: "Rapport Building",
+  closing: "Closing",
 };
 
 export default function HeuristicsPage() {
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<HeuristicTemplate | null>(null);
 
-  const filteredTemplates =
-    activeCategory === "all"
-      ? heuristicTemplates
-      : heuristicTemplates.filter((t) => t.category === activeCategory);
+  if (selected) {
+    return (
+      <div className="h-full overflow-auto">
+        <div className="p-6">
+          <Button
+            variant="ghost"
+            className="mb-4"
+            onClick={() => setSelected(null)}
+            data-testid="button-back-heuristics"
+          >
+            <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+            Back to Heuristics
+          </Button>
 
-  const handleCopy = async (template: HeuristicTemplate) => {
-    await navigator.clipboard.writeText(template.template);
-    setCopiedId(template.id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
+          <div className="max-w-4xl mx-auto">
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-md bg-primary flex items-center justify-center">
+                    <Lightbulb className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="mb-2">
+                      {categoryLabels[selected.category] || selected.category}
+                    </Badge>
+                    <CardTitle className="text-2xl" data-testid="text-heuristic-title">
+                      {selected.name}
+                    </CardTitle>
+                    <CardDescription className="mt-2">
+                      {selected.useCase}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+
+                <div>
+                  <h4 class御="font-semibold mb-2 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    Template
+                  </h4>
+                  <div className="bg-muted p-4 rounded-lg text-sm whitespace-pre-line">
+                    {selected.template}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-primary" />
+                    Example
+                  </h4>
+                  <div className="bg-muted p-4 rounded-lg text-sm italic">
+                    "{selected.example}"
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Target className="h-4 w-4 text-primary" />
+                    EQ Principles
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selected.eqPrinciples.map((p, i) => (
+                      <Badge key={i} variant="secondary">
+                        {p.replace("-", " ")}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-auto">
       <div className="p-6">
-        <div className="flex flex-col gap-2 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-md bg-chart-1 flex items-center justify-center">
-              <Target className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold" data-testid="text-heuristics-title">Heuristic Language Templates</h1>
-              <p className="text-muted-foreground">
-                Proven language patterns for pharma sales conversations
-              </p>
-            </div>
-          </div>
+        <h1 className="text-2xl font-bold mb-2" data-testid="text-heuristics-title">
+          Heuristics Playbook
+        </h1>
+        <p className="text-muted-foreground mb-6">
+          Proven conversation structures for objection handling, value messaging, and closing
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {heuristicTemplates.map((h) => (
+            <Card
+              key={h.id}
+              onClick={() => setSelected(h)}
+              className="hover-elevate cursor-pointer"
+              data-testid={`card-heuristic-${h.id}`}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
+                    <Lightbulb className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="mb-1">
+                      {categoryLabels[h.category] || h.category}
+                    </Badge>
+                    <h3 className="font-semibold">{h.name}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {h.useCase}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-xs text-muted-foreground">
+                  {h.template.slice(0, 120)}...
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-
-        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="mb-6">
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="all" data-testid="tab-all-heuristics">All</TabsTrigger>
-            <TabsTrigger value="discovery" data-testid="tab-discovery-heuristics">
-              <Search className="h-3 w-3 mr-1" />
-              Discovery
-            </TabsTrigger>
-            <TabsTrigger value="objection" data-testid="tab-objection-heuristics">
-              <Shield className="h-3 w-3 mr-1" />
-              Objection
-            </TabsTrigger>
-            <TabsTrigger value="value-proposition" data-testid="tab-value-heuristics">
-              <Sparkles className="h-3 w-3 mr-1" />
-              Value Prop
-            </TabsTrigger>
-            <TabsTrigger value="closing" data-testid="tab-closing-heuristics">
-              <Target className="h-3 w-3 mr-1" />
-              Closing
-            </TabsTrigger>
-            <TabsTrigger value="rapport" data-testid="tab-rapport-heuristics">
-              <Handshake className="h-3 w-3 mr-1" />
-              Rapport
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredTemplates.map((template) => {
-            const IconComponent = categoryIcons[template.category] || MessageSquare;
-            return (
-              <Card key={template.id} data-testid={`card-heuristic-${template.id}`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center">
-                        <IconComponent className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{template.name}</CardTitle>
-                        <Badge variant="outline" className="mt-1">
-                          {categoryLabels[template.category]}
-                        </Badge>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopy(template)}
-                      data-testid={`button-copy-${template.id}`}
-                    >
-                      {copiedId === template.id ? (
-                        <>
-                          <Check className="h-4 w-4 mr-1 text-chart-4" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4 mr-1" />
-                          Copy
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Template</h4>
-                    <div className="bg-muted p-3 rounded-lg">
-                      <p className="text-sm font-medium">{template.template}</p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Example</h4>
-                    <div className="bg-primary/5 p-3 rounded-lg border-l-2 border-primary">
-                      <p className="text-sm text-muted-foreground italic">"{template.example}"</p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">When to Use</h4>
-                    <p className="text-sm text-muted-foreground">{template.useCase}</p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1 pt-2 border-t">
-                    <span className="text-xs text-muted-foreground mr-1">EQ Principles:</span>
-                    {template.eqPrinciples.map((principle) => (
-                      <Badge key={principle} variant="secondary" className="text-xs">
-                        <Brain className="h-2 w-2 mr-1" />
-                        {principle.replace("-", " ")}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Using Heuristic Templates Effectively</CardTitle>
-            <CardDescription>Tips for natural, authentic application</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2">1. Adapt, Don't Recite</h4>
-                <p className="text-sm text-muted-foreground">
-                  Use these templates as frameworks, not scripts. Adapt the language to your personal style and the specific situation.
-                </p>
-              </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2">2. Combine with EQ</h4>
-                <p className="text-sm text-muted-foreground">
-                  Each template is designed to work with specific EQ frameworks. Apply the underlying principles for maximum impact.
-                </p>
-              </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2">3. Practice Regularly</h4>
-                <p className="text-sm text-muted-foreground">
-                  Use the role-play simulator to practice these templates until they become natural extensions of your conversation style.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

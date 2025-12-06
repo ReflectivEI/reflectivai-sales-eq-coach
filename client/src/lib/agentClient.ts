@@ -14,6 +14,21 @@ const CHAT_ENDPOINT = WORKER_URL.replace(/\/+$/, "") + "/chat";
 import type { Message } from "@/types/Message";
 
 //-------------------------------------------------------------
+// NORMALIZER (prevents content.split undefined errors)
+//-------------------------------------------------------------
+function normalizeMessage(raw: any): Message {
+  return {
+    id: raw?.id ?? crypto.randomUUID(),
+    role: raw?.role ?? "assistant",
+    content:
+      typeof raw?.content === "string"
+        ? raw.content
+        : JSON.stringify(raw ?? {}),
+    createdAt: raw?.createdAt ?? Date.now(),
+  };
+}
+
+//-------------------------------------------------------------
 // AI COACH
 //-------------------------------------------------------------
 export async function sendChat(messages: Message[]): Promise<Message> {
@@ -35,7 +50,8 @@ export async function sendChat(messages: Message[]): Promise<Message> {
     throw new Error(err);
   }
 
-  return await res.json();
+  const result = await res.json();
+  return normalizeMessage(result);
 }
 
 //-------------------------------------------------------------
@@ -53,7 +69,7 @@ export async function sendRoleplay({
   scenarioId,
   history = [],
   userInput = "",
-}: RoleplayPayload): Promise<any> {
+}: RoleplayPayload): Promise<Message> {
   const payload: any = {
     mode: "roleplay",
     action,
@@ -80,7 +96,8 @@ export async function sendRoleplay({
     throw new Error(err);
   }
 
-  return await res.json();
+  const result = await res.json();
+  return normalizeMessage(result);
 }
 
 //-------------------------------------------------------------

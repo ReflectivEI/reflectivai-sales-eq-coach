@@ -15,43 +15,6 @@ import {
 import reflectivAILogo from "@assets/E2ABF40D-E679-443C-A1B7-6681EF25E7E7_1764541714586.png";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sendChat, Message } from "../lib/agentClient";
-// Removed duplicate Message import; using Message from agentClient.ts
-
-function formatMessageContent(content: string) {
-  const lines = content.split('\n');
-  
-  return lines.map((line, lineIndex) => {
-    let processedLine = line;
-    
-    const headingMatch = processedLine.match(/^#{1,3}\s*(\d+\.?\s*)(.+)$/);
-    if (headingMatch) {
-      const [, number, title] = headingMatch;
-      const cleanTitle = title.replace(/\*\*/g, '');
-      return (
-        <span key={lineIndex}>
-          <strong className="font-semibold">{number}{cleanTitle}</strong>
-          {lineIndex < lines.length - 1 && '\n'}
-        </span>
-      );
-    }
-    
-    const parts = processedLine.split(/(\*\*[^*]+\*\*)/g);
-    const formattedParts = parts.map((part, partIndex) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        const boldText = part.slice(2, -2);
-        return <strong key={partIndex} className="font-semibold">{boldText}</strong>;
-      }
-      return <span key={partIndex}>{part}</span>;
-    });
-    
-    return (
-      <span key={lineIndex}>
-        {formattedParts}
-        {lineIndex < lines.length - 1 && '\n'}
-      </span>
-    );
-  });
-}
 
 const suggestedPrompts = [
   "How do I handle a price objection from a hospital CFO?",
@@ -67,7 +30,6 @@ export default function ChatPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const queryClient = useQueryClient();
 
-  // Local-only message state, since agentClient.ts is the only gateway
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -228,8 +190,11 @@ export default function ChatPage() {
                             : "bg-muted"
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{formatMessageContent(message.content)}</p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {message.content}
+                        </p>
                       </div>
+
                       {message.feedback && (
                         <div className="mt-2 p-3 bg-card border rounded-lg text-left">
                           {message.feedback.eqScore !== undefined && (
@@ -240,7 +205,7 @@ export default function ChatPage() {
                               </span>
                             </div>
                           )}
-                          {message.feedback.frameworks && message.feedback.frameworks.length > 0 && (
+                          {message.feedback.frameworks?.length > 0 && (
                             <div className="flex flex-wrap gap-1 mb-2">
                               {message.feedback.frameworks.map((fw) => (
                                 <Badge key={fw} variant="secondary" className="text-xs">
@@ -249,7 +214,7 @@ export default function ChatPage() {
                               ))}
                             </div>
                           )}
-                          {message.feedback.suggestions && message.feedback.suggestions.length > 0 && (
+                          {message.feedback.suggestions?.length > 0 && (
                             <div className="space-y-1">
                               {message.feedback.suggestions.map((s, i) => (
                                 <p key={i} className="text-xs text-muted-foreground">
@@ -265,6 +230,7 @@ export default function ChatPage() {
                   </div>
                 ))
               )}
+
               {sendMessageMutation.isPending && (
                 <div className="flex gap-3">
                   <div className="h-8 w-8 rounded-full overflow-hidden">
@@ -284,6 +250,7 @@ export default function ChatPage() {
                   </div>
                 </div>
               )}
+
             </div>
           </div>
 
@@ -330,6 +297,7 @@ export default function ChatPage() {
             ))}
           </CardContent>
         </Card>
+
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 //-------------------------------------------------------------
 // Unified Cloudflare Worker Client for ReflectivAI
+// Fully normalized + UI-safe response handling
 //-------------------------------------------------------------
 
 const WORKER_URL =
@@ -14,18 +15,33 @@ const CHAT_ENDPOINT = WORKER_URL.replace(/\/+$/, "") + "/chat";
 import type { Message } from "@/types/Message";
 
 //-------------------------------------------------------------
-// NORMALIZER (prevents content.split undefined errors)
+// Helpers
 //-------------------------------------------------------------
+
 function normalizeMessage(raw: any): Message {
   return {
-    id: raw?.id ?? crypto.randomUUID(),
-    role: raw?.role ?? "assistant",
-    content:
-      typeof raw?.content === "string"
-        ? raw.content
-        : JSON.stringify(raw ?? {}),
-    createdAt: raw?.createdAt ?? Date.now(),
+    id: raw.id ?? crypto.randomUUID(),
+    role: raw.role ?? "assistant",
+    content: typeof raw.content === "string"
+      ? raw.content
+      : JSON.stringify(raw.content ?? ""),
+    timestamp: raw.timestamp ?? Date.now(),
   };
+}
+
+// The backend may return { messages: [...] } or { message: {...} } or a raw message.
+function extractMessageResponse(json: any): Message {
+  if (Array.isArray(json?.messages)) {
+    // return last assistant message
+    const last = json.messages[json.messages.length - 1];
+    return normalizeMessage(last);
+  }
+
+  if (json?.message) {
+    return normalizeMessage(json.message);
+  }
+
+  return normalizeMessage(json);
 }
 
 //-------------------------------------------------------------
@@ -50,12 +66,12 @@ export async function sendChat(messages: Message[]): Promise<Message> {
     throw new Error(err);
   }
 
-  const result = await res.json();
-  return normalizeMessage(result);
+  const json = await res.json();
+  return extractMessageResponse(json);
 }
 
 //-------------------------------------------------------------
-// ROLE-PLAY
+// ROLEPLAY
 //-------------------------------------------------------------
 export interface RoleplayPayload {
   action: "start" | "respond" | "analyze";
@@ -69,14 +85,14 @@ export async function sendRoleplay({
   scenarioId,
   history = [],
   userInput = "",
-}: RoleplayPayload): Promise<Message> {
+}: RoleplayPayload): Promise<any> {
   const payload: any = {
     mode: "roleplay",
     action,
     scenarioId,
   };
 
-  if (history.length > 0) payload.history = history;
+  if (history?.length) payload.history = history;
   if (userInput) payload.userInput = userInput;
 
   const res = await fetch(CHAT_ENDPOINT, {
@@ -96,8 +112,14 @@ export async function sendRoleplay({
     throw new Error(err);
   }
 
-  const result = await res.json();
-  return normalizeMessage(result);
+  const json = await res.json();
+
+  // Roleplay returns multiple messages + analysis
+  if (json?.messages) {
+    json.messages = json.messages.map((m: any) => normalizeMessage(m));
+  }
+
+  return json;
 }
 
 //-------------------------------------------------------------

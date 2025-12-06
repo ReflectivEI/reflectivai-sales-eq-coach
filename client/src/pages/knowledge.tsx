@@ -1,47 +1,58 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronRight, BookOpen, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChevronRight, BookOpen, Tag, Lightbulb } from "lucide-react";
 import { knowledgeArticles } from "@/lib/data";
 import type { KnowledgeArticle } from "@shared/schema";
 
 export default function KnowledgePage() {
-  const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null);
-  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<KnowledgeArticle | null>(null);
 
-  const filtered = knowledgeArticles.filter((a) =>
-    a.title.toLowerCase().includes(search.toLowerCase()) ||
-    a.summary.toLowerCase().includes(search.toLowerCase())
-  );
-
-  if (selectedArticle) {
+  if (selected) {
     return (
       <div className="h-full overflow-auto">
         <div className="p-6">
           <Button
             variant="ghost"
             className="mb-4"
-            onClick={() => setSelectedArticle(null)}
+            onClick={() => setSelected(null)}
             data-testid="button-back-knowledge"
           >
             <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
-            Back to Knowledge Base
+            Back to Knowledge Library
           </Button>
 
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl" data-testid="text-knowledge-article-title">
-                  {selectedArticle.title}
-                </CardTitle>
-                <CardDescription>{selectedArticle.category}</CardDescription>
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
+                    <BookOpen className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl" data-testid="text-knowledge-detail-title">
+                      {selected.title}
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {selected.summary}
+                    </CardDescription>
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      {selected.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          <Tag className="h-3 w-3 mr-1" /> {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
+
               <CardContent>
                 <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <pre className="whitespace-pre-wrap">
-                    {selectedArticle.content}
+                  <pre className="whitespace-pre-wrap font-sans text-sm">
+                    {selected.content}
                   </pre>
                 </div>
               </CardContent>
@@ -52,72 +63,84 @@ export default function KnowledgePage() {
     );
   }
 
+  // LIST VIEW --------------------------------------------------------
   return (
     <div className="h-full overflow-auto">
       <div className="p-6">
         <div className="flex flex-col gap-2 mb-6">
           <h1 className="text-2xl font-bold" data-testid="text-knowledge-title">
-            Knowledge Base
+            Knowledge Library
           </h1>
           <p className="text-muted-foreground">
-            Explore regulatory, clinical, and access-related insights
+            Clinical, regulatory, engagement, and market access insights for pharma sales excellence.
           </p>
         </div>
 
-        <div className="mb-6">
-          <div className="flex items-center gap-2 p-2 border rounded-lg">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              className="flex-1 bg-transparent outline-none text-sm"
-              placeholder="Search articles..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              data-testid="input-knowledge-search"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filtered.map((article) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {knowledgeArticles.map((article) => (
             <Card
               key={article.id}
               className="hover-elevate cursor-pointer"
-              onClick={() => setSelectedArticle(article)}
+              onClick={() => setSelected(article)}
               data-testid={`card-knowledge-${article.id}`}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4 mb-3">
-                  <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
                     <BookOpen className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <Badge variant="outline" className="mb-1">
-                      {article.category}
-                    </Badge>
-                    <h3 className="font-semibold mb-1">{article.title}</h3>
+                  <div>
+                    <h3 className="font-semibold">{article.title}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {article.summary}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end">
-                  <Button variant="ghost" size="sm">
-                    Read More
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
+                <div className="flex flex-wrap gap-1">
+                  {article.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
+
+                <Button variant="ghost" size="sm">
+                  Read More <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {filtered.length === 0 && (
-          <div className="text-center mt-10 text-muted-foreground">
-            No articles found.
-          </div>
-        )}
+        <Card className="mt-10">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              Why This Library Matters
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <h4 className="font-medium mb-1">Clinical Credibility</h4>
+              <p className="text-sm text-muted-foreground">
+                Master key scientific and regulatory concepts to speak confidently with providers.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium mb-1">Compliance Awareness</h4>
+              <p className="text-sm text-muted-foreground">
+                Understand the limits of promotional interactions and avoid violations.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium mb-1">Market Access Insight</h4>
+              <p className="text-sm text-muted-foreground">
+                Navigate payers, formulary tiers, and reimbursement barriers like an expert.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

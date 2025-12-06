@@ -10,20 +10,13 @@ const WORKER_URL =
 const CHAT_ENDPOINT = WORKER_URL.replace(/\/+$/, "") + "/chat";
 
 //-------------------------------------------------------------
+// TYPES
+//-------------------------------------------------------------
+import type { Message } from "@/types/Message";
+
+//-------------------------------------------------------------
 // AI COACH
 //-------------------------------------------------------------
-export interface Message {
-    id: string | number;
-    role: "user" | "assistant";
-    content: string;
-    timestamp: number;
-    feedback?: {
-        eqScore?: number;
-        suggestions?: string[];
-        frameworks?: string[];
-    };
-}
-
 export async function sendChat(messages: Message[]): Promise<Message> {
     const payload = {
         mode: "coach",
